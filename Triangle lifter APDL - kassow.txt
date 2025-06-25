@@ -15,11 +15,11 @@ L1 = 444 	! Link length
 S = 17		! Distance from front and back link
 B = 35		! Section thickness of the link
 H = 13		! Section hight of the link
-SL_th = 0.8	! Spiral lifter thickness
+SL_th = 0.8	! Spiral lifter thickness 0.0311
 R2 = 75/2	! Outer radius of the spiral lift
 R1 = R2 - SL_th	! Inner radius of the spiral lift
-B_L = 15	! Section thickness of the edge link
-H_L = 30	! Section hight of the edge link
+B_B = 15	! Section thickness of the edge block
+H_B = 30	! Section hight of the edge block
 TH_plate = 6	! Top plate thickness
 W1 = 13
 W2 = 13
@@ -27,28 +27,34 @@ W3 = 35
 t1 = 5.5
 t2 = 5.5
 t3 = 5
-PS = 30		! Top Plate Shift
-HP = 1552		! Platform height
+PS = 27		! Top Plate Shift
+HP = 1552	! Platform height
 
-! Worst static case
-W_KASSOW = 40*9.81	! Robot total weight force
-C_KASSOW = 620		! CoM of the robot
-F_KASSOW = 5*9.81	! End effector payload
-L_KASSOW = 1850		! End effector extension
+! Kassow parameters
+W_K = 40*9.81				! Robot total weight force
+C_K = 559				! CoM of the robot
+F_K = 5*9.81				! End effector payload
+L_K = 62+1800+100			! End effector extension
+H_K = 200				! kassow base length
+B_K = 160				! kassow base width
+J_K = 391.2				! Arm height from the base
+D_K = 223				! Distance of the base from RF13
+E_K = 80				! Distance of the first joint from the front side of the base
+EQ_force = (W_K*C_K+F_K*L_K)/L_K
 
 ! Datasheet load
-F_DS = 1000	! N
-M_DS = 500000	! Nmm
+F_DS = 1000	    	! N
+M_DS = 500000	    	! Nmm
+EQ_F_DS = M_DS/L_K	! N
 
 x_shift = -5.25
 z_shift = -19.593
 N = 6		! Number of stages
 
-
 *AFUN, DEG				! To set the angles in degrees
 alpha = ASIN((HP-PS-TH_plate)/N/L1)	! Inclination angle of links wrt horizontal plane
 beta_os = 30				! Beta offset to get the reference position along the symmetry line
-beta = 0				! Angle at which the momentum is applied (wrt y axis of csys,0)
+beta = 160				! Angle at which the momentum is applied (wrt y axis of csys,0)
 
 x1 = L1/2*COS(alpha)	
 y1 = L1/2*SIN(alpha)
@@ -57,7 +63,7 @@ y2 = L1*SIN(alpha)
 
 ! >>>>> MATERIAL PROPERTIES <<<<<
 
-E_al = 57500		! Aluminum 6082 Young modulus (MPa) 68900 57500
+E_al = 68900		! Aluminum 6082 Young modulus (MPa)
 ni_al = 0.33		! Aluminum 6082 Poisson's ratio (-)
 Density_al = 2.7e-6	! Aluminum 6082 density (Kg/mm3)
 
@@ -67,8 +73,8 @@ Density_ss = 7.88e-6	! Stainless steel 301 density (Kg/mm3)
 
 ! >>>>> OTHER PARAMETERS <<<<<
 
-E_length = 20		! Element length (mm) 10
-E_plate = 10		! Top plate element size (mm) 10
+E_length = 15		! Element length (mm)
+E_plate = 10		! Top plate element size (mm)
 eps = 1E-4		! Selection tolerance
 eps_2 = S + 1 		! Selection tolerance for links
 
@@ -77,9 +83,9 @@ eps_2 = S + 1 		! Selection tolerance for links
 ! Types of elements
 ET,1,BEAM189		! Structure beams
 ET,2,184,1,1		! Rigid beams
-ET,3,SHELL181  		! Top plate
+ET,3,SOLID187		! Top plate (10-node element)
 
-!cross-sectional data of links
+!cross-sectional data of simplified links
 SECTYPE,1,BEAM,RECT, link
 SECDATA,B,H
 
@@ -87,9 +93,9 @@ SECDATA,B,H
 SECTYPE,2,BEAM,CTUBE, spiral
 SECDATA,R1,R2
 
-!cross-sectional data of edge links
+!cross-sectional data of edge blocks
 SECTYPE,3,BEAM,RECT, edge
-SECDATA,B_L,H_L
+SECDATA,B_B,H_B
 
 !cross-sectional data of top plate
 SECTYPE,4,SHELL
@@ -99,15 +105,11 @@ SECDATA,TH_plate
 SECTYPE,5,BEAM,CHAN, C_link
 SECDATA,W1,W2,W3,t1,t2,t3
 
-!cross-sectional data of profile beam to apply load
-SECTYPE,6,BEAM,RECT, beam
-SECDATA,80,40
-
 ! Coordinate systems definition
 LOCAL, 11, 0, -19.593, , -33.937, 0, 0, 60							! Coordinate system of the second side
 LOCAL, 12, 0, 19.593 + x2, , -33.937, 0, 0, 120							! Coordinate system of the third side
 LOCAL, 13, 0,,,-22.624, 0, 0, -60								! Coordinate system of the first edge
-LOCAL, 14, 0,195.053*SIN(60),y2*N+PS+TH_plate+40,-22.624-195.053*COS(60),0,0,beta_os+beta	! Coordinate system of the arm
+LOCAL, 14, 0,(D_K+E_K)*SIN(60),y2*N+PS+TH_plate+J_K,-22.624-(D_K+E_K)*COS(60),0,0,beta_os+beta	! Coordinate system of the arm
 
 ! Aluminum 6082 properties
 MP, EX  , 1, E_al
@@ -118,11 +120,6 @@ MP, dens, 1, Density_al
 MP, EX  , 2, E_ss
 MP, PRXY, 2, ni_ss
 MP, dens, 2, Density_ss
-
-! Stainless steel 316L properties
-MP, EX  , 3, E_ss
-MP, PRXY, 3, ni_ss
-MP, dens, 3, 0
 
 ! >>>>> SIDE 1 <<<<<
 
@@ -416,7 +413,6 @@ allsel,all
 ! Side 1 connections to edges
 csys, 0
 NSEL, S, LOC, Z, -H/2-4-eps, -H/2+eps
-!NSEL, R, LOC, Y, 5, N*y2+5
 NSEL, U, LOC, X, eps, x2-eps
 NROTAT, ALL, LOCAL              ! Rotate all nodes to align with the local system
 CPINTF,ux,eps_2
@@ -428,7 +424,6 @@ CPINTF,roty,eps_2
 ! Side 2 connections to edges
 csys, 11
 NSEL, S, LOC, Z, H/2-eps, H/2+4+eps
-!NSEL, R, LOC, Y, 5, N*y2+5
 NSEL, U, LOC, X, eps, x2-eps
 NROTAT, ALL, LOCAL              ! Rotate all nodes to align with the local system
 CPINTF,ux,eps_2
@@ -440,7 +435,6 @@ CPINTF,roty,eps_2
 ! Side 3 connections to edges
 csys, 12
 NSEL, S, LOC, Z, -4-H/2-eps, -H/2+eps
-!NSEL, R, LOC, Y, 5, N*y2+5
 NSEL, U, LOC, X, eps, x2-eps
 NROTAT, ALL, LOCAL              ! Rotate all nodes to align with the local system
 CPINTF,ux,eps_2
@@ -453,7 +447,7 @@ CPINTF,roty,eps_2
 
 csys, 13
 k, 1000, 0, 0   , -195.053
-k, 1001, 0, y2*N+PS, -195.053
+k, 1001, 0, y2*N, -195.053
 K, 900,  0, 0, 0
 L, 1000, 1001
 LESIZE, all, E_length
@@ -491,7 +485,7 @@ NSEL,R,LOC,Z,z_shift
 ! Spiral lift
 csys, 0
 NSEL,S,LOC,X,168.92
-NSEL,R,LOC,Y,N*y2+PS
+NSEL,R,LOC,Y,N*y2
 NSEL,R,LOC,Z,-120.151
 *GET, SL, NODE, 0, NUM, MIN  ! Spiral lift top node
 
@@ -512,264 +506,184 @@ K, 2009, -265, y2*N+PS, -89.51
 K, 2010, -60 , y2*N+PS, 28.847
  
 ! Create the keypoints of the kassow base
-K, 2020, 80, y2*N+PS, -10 
-K, 2021, 80, y2*N+PS, -180 
-K, 2022, -80, y2*N+PS, -180 
-K, 2023, -80, y2*N+PS, -10 
+K, 2020,  B_K/2, y2*N+PS, -D_K 
+K, 2021,  B_K/2, y2*N+PS, -D_K-H_K 
+K, 2022, -B_K/2, y2*N+PS, -D_K-H_K 
+K, 2023, -B_K/2, y2*N+PS, -D_K 
 
 ! Create the keypoints for better mesh
-K, 2024, 80  , y2*N+PS, 0 
-K, 2025, 80, y2*N+PS, -195.053 
-K, 2026, -80, y2*N+PS, -195.053 
-K, 2027, -80, y2*N+PS, 0 
+K, 2024,  B_K/2, y2*N+PS, -434.053 
+K, 2025, -B_K/2, y2*N+PS, -434.053
 
-! Create a keypoint on edge 1
-csys, 0
-*GET, NX, NODE, ED1, LOC, X   ! Get X coordinate of edge 1
-*GET, NZ, NODE, ED1, LOC, Z   ! Get Z coordinate of edge 1
-K, 2011, NX, y2*N+PS, NZ
-K, 2111, NX, y2*N, NZ
-K, 2211, NX, y2*N+PS, NZ
-
-! Create a keypoint on edge 2
-csys, 11
-*GET, NX, NODE, ED2, LOC, X   ! Get X coordinate of edge 1
-*GET, NZ, NODE, ED2, LOC, Z   ! Get Z coordinate of edge 1
-K, 2013, NX, y2*N+PS, NZ
-K, 2113, NX, y2*N, NZ
-K, 2213, NX, y2*N+PS, NZ
-
-! Create a keypoint on edge 3
-csys, 12
-*GET, NX, NODE, ED3, LOC, X   ! Get X coordinate of edge 1
-*GET, NZ, NODE, ED3, LOC, Z   ! Get Z coordinate of edge 1
-K, 2012, NX, y2*N+PS, NZ
-K, 2112, NX, y2*N, NZ
-K, 2212, NX, y2*N+PS, NZ
-
-! Create elements between top plate and edges
-L,2111,2211
-L,2113,2213
-L,2112,2212
-
-TYPE, 2
-LESIZE, all,E_length
-LMESH, all
-allsel,all
-
-! Edge 1 constraint  -----------------------------------------------------------------------------------------------------------------------------------
-
-csys, 0
-*GET, NX, NODE, ED1, LOC, X   ! Get X coordinate of edge 1
-*GET, NZ, NODE, ED1, LOC, Z   ! Get Z coordinate of edge 1
-
-NSEL, S, LOC, Y, y2*N
-NSEL, R, LOC, X, NX
-NSEL, R, LOC, Z, NZ
-NROTAT, ALL, LOCAL              ! Rotate all nodes to align with the local system
-NSEL, U, NODE, , ED1  		! Remove the target node ED1 from the selection
-
-*GET, CLOSEST_NODE, NODE,  0, NUM, MAX  ! Get the highest node number in the selection
-allsel,all
-
-csys, 0
-CP, NEXT, ALL  , ED1, CLOSEST_NODE
-
-! Edge 2 constraint  -----------------------------------------------------------------------------------------------------------------------------------
-
-*GET, NX, NODE, ED2, LOC, X   ! Get X coordinate of edge 2
-*GET, NZ, NODE, ED2, LOC, Z   ! Get Z coordinate of edge 2
-
-NSEL, S, LOC, Y, y2*N
-NSEL, R, LOC, X, NX
-NSEL, R, LOC, Z, NZ
-csys, 11
-NROTAT, ALL, LOCAL              ! Rotate all nodes to align with the local system
-NSEL, U, NODE, , ED2  		! Remove the target node ED1 from the selection
-
-*GET, CLOSEST_NODE, NODE,  0, NUM, MAX  ! Get the highest node number in the selection
-allsel,all
-
-csys, 11
-CP, NEXT, ALL  , ED2, CLOSEST_NODE
-
-! Edge 3 constraint  -----------------------------------------------------------------------------------------------------------------------------------
-
-*GET, NX, NODE, ED3, LOC, X   ! Get X coordinate of edge 3
-*GET, NZ, NODE, ED3, LOC, Z   ! Get Z coordinate of edge 3
-
-NSEL, S, LOC, Y, y2*N
-NSEL, R, LOC, X, NX
-NSEL, R, LOC, Z, NZ
-csys, 0
-NROTAT, ALL, LOCAL              ! Rotate all nodes to align with the local system
-NSEL, U, NODE, , ED3  		! Remove the target node ED1 from the selection
-
-*GET, CLOSEST_NODE, NODE,  0, NUM, MAX  ! Get the highest node number in the selection
-allsel,all
-
-csys, 0
-CP, NEXT, ALL  , ED3, CLOSEST_NODE
-
-! >>>>> GET NUMBER OF TOP EDGE NODES <<<<<
-
-! Edge 1
-csys,0
-NSEL,S,LOC,X,x_shift
-NSEL,R,LOC,Y,y2*N+PS
-NSEL,R,LOC,Z,z_shift
-*GET, ED1T, NODE, 0, NUM, MIN
-
-! Edge 2
-csys,11
-NSEL,S,LOC,X,x2 - x_shift
-NSEL,R,LOC,Y,y2*N+PS
-NSEL,R,LOC,Z,-z_shift
-*GET, ED2T, NODE, 0, NUM, MIN
-
-! Edge 3
-csys,12
-NSEL,S,LOC,X,x_shift
-NSEL,R,LOC,Y,y2*N+PS
-NSEL,R,LOC,Z,z_shift
-*GET, ED3T, NODE, 0, NUM, MIN
-
-allsel,all
-
-! Keypoint on the spiral lift: 1001
-
-! Create another keypoint on top of the spiral lift
-CSYS, 13
-*GET, KX, KP, 1001, LOC, X   ! Get X coordinate of top spiral lift
-*GET, KZ, KP, 1001, LOC, Z   ! Get Z coordinate of top spiral lift
-K, 2016, KX, y2*N+PS, KZ
+! Create the areas of the top plate
 
 ! Area 1
-A,2001,2024,2011,2027,2010
+A,2001,2002,2020,2023,2009,2010
 
 ! Area 2
-A,2001,2002,2003,2004,2012,2021,2020,2024
+A,2002,2003,2004,2005,2024,2021,2020
 
 ! Area 3
-A,2004,2005,2012
+A,2024,2025,2022,2021
 
 ! Area 4
-A,2005,2006,2013,2022,2026,2016,2025,2021,2012
+A,2006,2007,2008,2009,2023,2022,2025
 
 ! Area 5
-A,2006,2007,2013
-
-! Area 6
-A,2007,2008,2009,2010,2027,2023,2022,2013
-
-! Area 7
-A,2011,2024,2020,2023,2027
-
-! Area 8
 A,2020,2021,2022,2023
 
-! Area 9
-A,2021,2025,2016,2026,2022
+! Create a line for extrusion
+K, 4001, 60, y2*N+PS+TH_plate, 28.847
+L, 2001, 4001
+
+! Extrude along the line
+*get,extrude_line,line,,num,max
+Lesize,extrude_line,,,2
+Vdrag,all,,,,,,extrude_line
 
 ! Mesh the area with shell elements
 TYPE, 3
 MAT, 1
-ESIZE,E_plate
-secn, 4 
-AMESH,ALL
+ESIZE,E_plate           ! Set element size
+mshape,1		! Mesh type: tetrahedral-shaped elements
+mshk,0			! Free meshing
+VMESH,ALL               ! Mesh all volumes
 allsel,all
 
 ! TOP PLATE CONSTRAINTS
 
-! TOP Edge 1 constraint  -----------------------------------------------------------------------------------------------------------------------------------
+! Top Edge 1 constraint     -----------------------------------------------------------------------------------------------------------------------------------
 
-csys, 0
-*GET, NX, NODE, ED1T, LOC, X   ! Get X coordinate of edge 1
-*GET, NZ, NODE, ED1T, LOC, Z   ! Get Z coordinate of edge 1
+csys, 13
+NSEL,S, LOC, X, NX1-10, NX1+10
+NSEL,R, LOC, Z, NZ1-10, NZ1+10
+NSEL,R, LOC, Y, y2*N+PS-esp, y2*N+PS+esp
+NSEL,U, LOC, Y, y2*N+PS+0.1, y2*N+PS+1000
 
-NSEL, S, LOC, Y, y2*N+PS
-NSEL, R, LOC, X, NX
-NSEL, R, LOC, Z, NZ
-NROTAT, ALL, LOCAL              ! Rotate all nodes to align with the local system
-NSEL, U, NODE, , ED1T 				! Remove the target node ED1 from the selection
+RBE3, ED1, ALL, ALL	! Distributes the force/moment applied at the master node to a set of slave nodes
 
-*GET, CLOSEST_NODE, NODE,  0, NUM, MAX  ! Get the highest node number in the selection
-allsel,all
+! Top Edge 2 constraint     -----------------------------------------------------------------------------------------------------------------------------------
 
-csys, 0
-CP, NEXT, ux  , ED1T, CLOSEST_NODE
-CP, NEXT, uy  , ED1T, CLOSEST_NODE
-CP, NEXT, uz  , ED1T, CLOSEST_NODE
-CP, NEXT, rotx, ED1T, CLOSEST_NODE
-CP, NEXT, roty, ED1T, CLOSEST_NODE
-CP, NEXT, rotz, ED1T, CLOSEST_NODE
-
-! TOP Edge 2 constraint  -----------------------------------------------------------------------------------------------------------------------------------
-
+csys, 11
 *GET, NX, NODE, ED2, LOC, X   ! Get X coordinate of edge 2
 *GET, NZ, NODE, ED2, LOC, Z   ! Get Z coordinate of edge 2
 
-NSEL, S, LOC, Y, y2*N+PS
-NSEL, R, LOC, X, NX
-NSEL, R, LOC, Z, NZ
-csys, 11
-NROTAT, ALL, LOCAL              ! Rotate all nodes to align with the local system
-NSEL, U, NODE, , ED2  				! Remove the target node ED1 from the selection
+! Select the nodes of the top plate to connect with the edge
+NSEL,S, LOC, X, NX-30, NX+30
+NSEL,R, LOC, Z, NZ-15, NZ+15
+NSEL,R, LOC, Y, y2*N+PS-esp, y2*N+PS+esp
+NSEL,U, LOC, Y, y2*N+PS+0.1, y2*N+PS+1000
+NSEL,U, LOC, Y, y2*N+PS-1000, y2*N+PS-0.1
 
-*GET, CLOSEST_NODE, NODE,  0, NUM, MAX  ! Get the highest node number in the selection
+NROTAT, ALL, LOCAL              ! Rotate all nodes to align with the local system
+
+RBE3, ED2, RXYZ, ALL	! Distributes the force/moment applied at the master node to a set of slave nodes
+RBE3, ED2, UY, ALL	! Distributes the force/moment applied at the master node to a set of slave nodes
+RBE3, ED2, UZ, ALL	! Distributes the force/moment applied at the master node to a set of slave nodes
+
 allsel,all
 
-csys, 11
-CP, NEXT, uy  , ED2T, CLOSEST_NODE
-CP, NEXT, uz  , ED2T, CLOSEST_NODE
-CP, NEXT, rotx, ED2T, CLOSEST_NODE
-CP, NEXT, roty, ED2T, CLOSEST_NODE
-CP, NEXT, rotz, ED2T, CLOSEST_NODE
+! Top Edge 3 constraint  -----------------------------------------------------------------------------------------------------------------------------------
 
-! TOP Edge 3 constraint  -----------------------------------------------------------------------------------------------------------------------------------
-
+csys, 0
 *GET, NX, NODE, ED3, LOC, X   ! Get X coordinate of edge 3
 *GET, NZ, NODE, ED3, LOC, Z   ! Get Z coordinate of edge 3
 
-NSEL, S, LOC, Y, y2*N+PS
-NSEL, R, LOC, X, NX
-NSEL, R, LOC, Z, NZ
-csys, 0
+! Select the nodes of the top plate to connect with the edge
+NSEL,S, LOC, X, NX-30, NX+30
+NSEL,R, LOC, Z, NZ-15, NZ+15
+NSEL,R, LOC, Y, y2*N+PS-esp, y2*N+PS+esp
+NSEL,U, LOC, Y, y2*N+PS+0.1, y2*N+PS+1000
+NSEL,U, LOC, Y, y2*N+PS-1000, y2*N+PS-0.1
+
 NROTAT, ALL, LOCAL              ! Rotate all nodes to align with the local system
-NSEL, U, NODE, , ED3  				! Remove the target node ED1 from the selection
 
-*GET, CLOSEST_NODE, NODE,  0, NUM, MAX  ! Get the highest node number in the selection
+RBE3, ED3, RXYZ, ALL	! Distributes the force/moment applied at the master node to a set of slave nodes
+RBE3, ED3, UY, ALL	! Distributes the force/moment applied at the master node to a set of slave nodes
+RBE3, ED3, UZ, ALL	! Distributes the force/moment applied at the master node to a set of slave nodes
+
 allsel,all
-
-csys, 0
-CP, NEXT, uy  , ED3T, CLOSEST_NODE
-CP, NEXT, uz  , ED3T, CLOSEST_NODE
-CP, NEXT, rotx, ED3T, CLOSEST_NODE
-CP, NEXT, roty, ED3T, CLOSEST_NODE
-CP, NEXT, rotz, ED3T, CLOSEST_NODE
 
 ! Spiral lift constraint  -----------------------------------------------------------------------------------------------------------------------------------
 
+csys, 13
 *GET, NX, NODE, SL, LOC, X   ! Get X coordinate of node SL
 *GET, NZ, NODE, SL, LOC, Z   ! Get Z coordinate of node SL
 
-NSEL, S, LOC, Y, y2*N+PS
-NSEL, R, LOC, X, NX
-NSEL, R, LOC, Z, NZ
-csys, 0
-NROTAT, ALL, LOCAL              ! Rotate all nodes to align with the local system
-NSEL, U, NODE, , SL  				! Remove the target node ED1 from the selection
+! Create two other nodes for the spherical constraint
+N, NODE, NX, y2*N, NZ
+N, NODE, NX, y2*N+5, NZ
 
-*GET, CLOSEST_NODE, NODE,  0, NUM, MAX  ! Get the highest node number in the selection
+NSEL,S, LOC, X, NX-eps, NX+eps
+NSEL,R, LOC, Z, NZ-eps, NZ+eps
+NSEL,R, LOC, Y, y2*N-1, y2*N+1
+*GET, SL_constr_1, NODE, 0, NUM, MAX
+
+NSEL,S, LOC, X, NX-eps, NX+eps
+NSEL,R, LOC, Z, NZ-eps, NZ+eps
+NSEL,R, LOC, Y, y2*N+5-1, y2*N+5+1
+*GET, SL_constr_2, NODE, 0, NUM, MAX
+
+TYPE, 2
+E, SL_constr_1, SL_constr_2
+
+! Select the nodes of the top plate to connect with the spiralift
+NSEL,S, LOC, X, NX-10, NX+10
+NSEL,R, LOC, Z, NZ-10, NZ+10
+NSEL,R, LOC, Y, y2*N+PS-esp, y2*N+PS+esp
+NSEL,U, LOC, Y, y2*N+PS+0.1, y2*N+PS+1000
+
+NROTAT, ALL, LOCAL              ! Rotate all nodes to align with the local system
+
+RBE3, SL_constr_2, ALL, ALL	! Distributes the force/moment applied at the master node to a set of slave nodes
+
 allsel,all
 
+CP, NEXT, ux, SL, SL_constr_1
+CP, NEXT, uy, SL, SL_constr_1
+CP, NEXT, uz, SL, SL_constr_1
+
+||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+! Create kassow joint node
+
+csys,14
+N, NEXT, 0, 0, 0
+NSEL, S, LOC, Y, -eps, eps
+NSEL, R, LOC, X, -eps, eps
+NSEL, R, LOC, Z, -eps, eps
+NROTAT, ALL, LOCAL              ! Rotate all nodes to align with the local system
+*GET, KJ, NODE, 0, NUM, MIN
+
+! Create end effector node for applying the force
+
+csys,14
+N, NEXT, -L_K, 0, 0
+NSEL, S, LOC, Y, -eps, eps
+NSEL, R, LOC, X, -L_K-eps, -L_K+eps
+NSEL, R, LOC, Z, -eps, eps
+NROTAT, ALL, LOCAL              ! Rotate all nodes to align with the local system
+*GET, EE, NODE, 0, NUM, MIN
+ALLSEL, ALL
+
+! Create the kassow arm element
+TYPE,2
+E, KJ, EE
+
+! Rotate the EE node to ensure that the y component is always vertical
+NSEL,S,NODE,,EE
 csys, 0
-CP, NEXT, ux  , SL, CLOSEST_NODE
-CP, NEXT, uy  , SL, CLOSEST_NODE
-CP, NEXT, uz  , SL, CLOSEST_NODE
+NROTAT, ALL, LOCAL              ! Rotate all nodes to align with the local system
+
+! Connect the base nodes of the top plate to the node just created
+csys, 13
+NSEL, S, LOC, Z, -D_K, -D_K-H_K
+NSEL, R, LOC, Y, y2*N+PS+TH_plate-eps, y2*N+PS+TH_plate+eps
+NSEL, R, LOC, X, -B_K/2, B_K/2
+
+RBE3, KJ, ALL, ALL	! Distributes the force/moment applied at the master node to a set of slave nodes
 
 ! Rotate the bottom nodes for constraints
-
 csys, 12
 NSEL, S, LOC, Z, z_shift - eps*5, z_shift + eps*5
 NSEL, R, LOC, X, x_shift - eps*5, x_shift + eps*5
@@ -786,20 +700,18 @@ NROTAT, ALL, LOCAL              ! Rotate all nodes to align with the local syste
 
 allsel,all
 
-! Rotate the nodes where applying the load
-CSYS, 13
-NSEL, S, LOC, Y, y2*N+PS-eps, y2*N+PS+eps
-NSEL, R, LOC, X, -80, 80
-NSEL, R, LOC, Z, -10, -180
-CSYS, 14
-NROTAT, ALL, LOCAL              ! Rotate all nodes to align with the local system
-
 Fini
 
-/SOLUTION
-ANTYPE, STATIC, NEW   !static solution
+||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
-NLGEOM,ON
+/SOLUTION
+ANTYPE, 4		! Set analysis type to transient
+TIME,4                  ! Set total analysis time to 4 seconds
+NSUBST,4	        ! Divide into 4 equal substeps
+DELTIM,0.1              ! Set initial time step to 0.1 seconds
+AUTOTS,ON               ! Enable automatic time stepping
+
+NLGEOM,ON		! Non-linear analysis command
 
 ! >>>>> EXTERNAL CONSTRAINTS <<<<<
 
@@ -845,17 +757,21 @@ D, ALL, roty
 
 ! >>>>> FORCES AND MOMENTS <<<<<
 
-csys, 13
-NSEL, S, LOC, Z, -10, -180
-NSEL, R, LOC, Y, y2*N+PS-eps, y2*N+PS+eps
-NSEL, R, LOC, X, -80, 80
+allsel,all
+TIME,0
+F, EE, FY, -EQ_force/4
+TIME,1
+F, EE, FY, -EQ_force/2
+TIME,2
+F, EE, FY, -EQ_force*3/4
+TIME,3
+F, EE, FY, -EQ_force
+TIME,4
+F, EE, FY, -EQ_force
 
-csys, 14
-*GET, N_node, NODE, 0, COUNT  ! Get the total number of selected nodes
-!F, All, FY, (-F_KASSOW-W_KASSOW) / N_node
-!F, All, MZ, (F_KASSOW*L_KASSOW+W_KASSOW*C_KASSOW) / N_node
-F, All, FY, -F_DS / N_node
-F, All, MZ, M_DS / N_node
+! Get element and node count
+*GET, E_TOT_COUNT, ELEM,,COUNT
+*GET, N_TOT_COUNT, NODE,,COUNT
 
 /eshape,1
 
