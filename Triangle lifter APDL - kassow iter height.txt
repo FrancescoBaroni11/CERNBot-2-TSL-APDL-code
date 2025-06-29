@@ -1,5 +1,5 @@
 ! ---------------------------------------------------------------------------------
-! TRIANGLE LIFTER - kassow arm
+! TRIANGLE LIFTER - kassow height iteration
 ! ...............................................................
 ! DETERMINATION OF MAXIMUM DISPLACEMENT AND STRESS
 ! ---------------------------------------------------------------------------------
@@ -9,7 +9,7 @@ FINISH
 /FILNAM,TRIANGLE_LIFTER
 /TITLE,TRIANGLE LIFTER
 
-*DO, H_i, 0, 1200, 240      ! Loop: i starts at 1, ends at 10, increments by 1
+*DO, H_i, 0, 1200, 240
 
 /PREP7
 
