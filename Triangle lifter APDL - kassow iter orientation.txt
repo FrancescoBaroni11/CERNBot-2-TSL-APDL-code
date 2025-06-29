@@ -1,5 +1,5 @@
 ! ---------------------------------------------------------------------------------
-! TRIANGLE LIFTER - kassow arm
+! TRIANGLE LIFTER - kassow orientation iteration
 ! ...............................................................
 ! DETERMINATION OF MAXIMUM DISPLACEMENT AND STRESS
 ! ---------------------------------------------------------------------------------
@@ -9,7 +9,7 @@ FINISH
 /FILNAM,TRIANGLE_LIFTER
 /TITLE,TRIANGLE LIFTER
 
-*DO, beta_v, 0, 360, 20      ! Loop: i starts at 1, ends at 10, increments by 1
+*DO, beta_v, 0, 360, 20
 
 ! >>>>> MODEL PARAMETERS <<<<<
 
